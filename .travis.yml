@@ -1,8 +1,6 @@
 sudo: required
 language: android
 
-services:
-  - docker
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -14,14 +12,12 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.gradle/native
     - $HOME/.gradle/daemon
-    - $HOME/.android/build-cache
 
     - node_modules
 
 env:
   global:
     - ANDROID_API_LEVEL=26
-    - EMULATOR_API_LEVEL=16
 
 android:
   components:
@@ -29,27 +25,25 @@ android:
   - platform-tools
   - build-tools-26.0.2
   - android-$ANDROID_API_LEVEL
-  - android-$EMULATOR_API_LEVEL
-  - sys-img-armeabi-v7a-android-$ANDROID_API_LEVEL
-  - sys-img-armeabi-v7a-android-$EMULATOR_API_LEVEL
 
-before_script:
-  # setup android emulator
-  - echo no | android create avd --force -n test -t android-$EMULATOR_API_LEVEL --abi armeabi-v7a
-  - emulator -avd test -no-skin -no-audio -no-window -camera-back none -camera-front none -verbose -memory 2048 &
-  - android-wait-for-emulator
-  - adb shell input keyevent 82 &
-  - git clone https://github.com/kinecosystem/blockchain-ops.git
-  - cd blockchain-ops
-  # use specific working version to ensure it will not break in the future
-  - git checkout c26afdc168ad378363c63fb44de5a93b3cf24ddf
-  - cd image
-  - ./init.sh
+before_script
 
 script:
-  - cd ../..
-  - ./gradlew :sample:assembleDebug
-  - ./gradlew jacocoTestReport  -Pandroid.testInstrumentationRunnerArguments.notClass=kin.core.KinAccountIntegrationTest --info
+  - ./gradlew :sample:assembleRelease
+  - ./gradlew :kin-core:testDebugUnitTest
+  - ./gradlew :kin-core:assembleAndroidTest
+  - - openssl aes-256-cbc -K $encrypted_78f5c5933ac8_key -iv $encrypted_78f5c5933ac8_iv -in secret.json.enc -out secret.json -d
+  - wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-220.0.0-linux-x86_64.tar.gz
+  - tar xf google-cloud-sdk-220.0.0-linux-x86_64.tar.gz
+  - echo "y" | ./google-cloud-sdk/bin/gcloud components update beta
+  - ./google-cloud-sdk/bin/gcloud auth activate-service-account --key-file secret.json
+  - ./google-cloud-sdk/bin/gcloud firebase test android run  \
+      --type instrumentation --app sample/build/outputs/apk/debug/sample-debug.apk \
+      --test  kin-core/build/outputs/apk/androidTest/debug/kin-core-debug-androidTest.apk \
+      --device model=Nexus5X,version=25,locale=en \
+      --environment-variables coverage=true,coverageFile=/sdcard/tmp/code-coverage/connected/coverage.ec \
+      --directories-to-pull=/sdcard/tmp
+
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
