@@ -6,7 +6,6 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
-import static kin.core.IntegConsts.TEST_NETWORK_ID;
 import static kin.core.IntegConsts.TEST_NETWORK_URL;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
@@ -37,7 +36,7 @@ public class KinClientIntegrationTest {
 
     @Before
     public void setup() {
-        serviceProvider = new ServiceProvider(TEST_NETWORK_URL, TEST_NETWORK_ID);
+        serviceProvider = new ServiceProvider(TEST_NETWORK_URL, ServiceProvider.NETWORK_ID_TEST);
         kinClient = createNewKinClient(STORE_KEY_TEST);
         kinClient2 = createNewKinClient(STORE_KEY_TEST2);
         kinClient.clearAllAccounts();
